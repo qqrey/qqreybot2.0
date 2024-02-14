@@ -171,4 +171,4 @@ except Exception as ex:
     main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
 
 #keep_alive.keep_alive()
-main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.G1tA0a.LN7HISMB7hdZA6g3dqQSJ1UHAGgEYRze5Mwh8I", reconnect=True)
+main_bot.run("token", reconnect=True)
