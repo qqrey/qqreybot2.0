@@ -67,9 +67,6 @@ try:
 
     @commands.command()
     async def sign(ctx):
-        now_day = time.strftime("%d")
-        now_month = time.strftime("%m")
-        now_year = time.strftime("%Y")
         try:
             with open(f"{ctx.author}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
@@ -98,8 +95,11 @@ try:
                         # Extract data from the first 4 rows
                         temp_list = rows[:4]
                         print("temp_list: ", temp_list)  
+            now_day = time.strftime("%d")
+            now_month = time.strftime("%m")
+            now_year = time.strftime("%Y")
             print("ctx.author: ", ctx.author)     
-            username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
+            username = csv_data.csv_use(temp_list[0][0], 20, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
         
         except FileNotFoundError:
             with open(f"{ctx.author}.csv", 'w', newline='') as file:
@@ -132,21 +132,22 @@ try:
                         # Extract data from the first 4 rows
                         temp_list = rows[:4]
                         print("temp_list: ", temp_list)  
+            now_day = time.strftime("%d")
+            now_month = time.strftime("%m")
+            now_year = time.strftime("%Y")
             print("ctx.author: ", ctx.author)     
-            username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
+            print("now_day: ", now_day)
+            username = csv_data.csv_use(temp_list[0][0], 21, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
                 
         if username.read_data() is True:
             await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(ctx.author))
+            return_something = username.calculate()
+            if return_something is not None:
+                await ctx.send(return_something)
         else:
             await ctx.send("你已经成功签到了，等待下一个日出的到来吧")
 
     main_bot.add_command(sign)
-
-    @commands.command()
-    async def calculat(ctx):
-        username = csv_data.csv_use(ctx.author)
-        username.calculate()
-
 
 except Exception as ex:
     sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
@@ -170,4 +171,4 @@ except Exception as ex:
     main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
 
 #keep_alive.keep_alive()
-main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
+main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.G1tA0a.LN7HISMB7hdZA6g3dqQSJ1UHAGgEYRze5Mwh8I", reconnect=True)

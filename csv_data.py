@@ -11,7 +11,8 @@ class csv_use:
         self.diamond = pdiamond
         self.netherite_ingot = pnetherite_ingot
         self.combo = pcombo
-        #print(self.date)
+        print("self_date: ", self.date)
+        print("pdate: ", pdate)
 
 
     def write_data(self, old_data, number):
@@ -127,21 +128,27 @@ class csv_use:
                     return "you have not sign in before"
                 else:
                     old_data.append(row)
-
+            
             temp = 0
             temp_list = []
             if temp != 4:  #only get first 4 data(as know as name, diamonds, and netherite_ingot, combo)
-                for row in reader:
+                for row in old_data:
                     if row == []:
                         return
                     else:
                         temp_list.append(row)
                         temp+=1
             
-            player_name = temp_list[0]
-            diamond_amount = temp_list[1]
-            netherite_ingot_amount = temp_list[2]
-            combo = temp_list[3]
+            
+            player_name = temp_list[0][0]
+            diamond_amount = int(temp_list[1][0])
+            netherite_ingot_amount = int(temp_list[2][0])
+            combo = int(temp_list[3][0])
+            diamond_amount_count = 0
+            netherite_ingot_count = 0
+            combo_count = 0
+            path_check = 0
+            print("cal_temp_list: ", temp_list)
 
             if self.date == 1:    #if there is first day of the month
                 with open(f"{self.name}.csv", 'w', newline='') as file:
@@ -151,32 +158,72 @@ class csv_use:
                     writer.writerow([netherite_ingot_amount])
                     writer.writerow(0)      #reset combo when the first day in a month
                     writer.writerow([self.date])
-            if len(old_data) > 9:  #exclude first three data
-                #calculate if the is at least 7 data in a row
-                if old_data[len(old_data) - 1][0] - old_data[len(old_data) - 7][0] == 6 and combo == 0:
-                    diamond_amount += 2
-                    netherite_ingot_amount += 3
-                    combo += 1
 
+            print("old_data: ", old_data)
+            print("len_old_data: ", len(old_data))
+            if int(len(old_data)) > 10:  #exclude first four data
+                #calculate if the is at least 7 data in a row
+                if int(old_data[len(old_data) - 1][0]) - int(old_data[len(old_data) - 7][0]) == 6 and combo == 0:
+                    diamond_amount_count = diamond_amount + 2
+                    netherite_ingot_count = netherite_ingot_amount + 3
+                    combo_count = combo + 1
+                    path_check = 1
                     print("7 days in a row")
 
-                elif old_data[len(old_data) - 1][0] - old_data[len(old_data) - 14][0] == 13 and combo == 1:
-                    diamond_amount += 2
-                    netherite_ingot_amount += 5
-                    combo += 1
-                    print("14 days in a row")
-
-                elif old_data[len(old_data) - 1][0] - old_data[len(old_data) - 21][0] == 20 and combo == 2:
-                    diamond_amount += 2
-                    netherite_ingot_amount += 8
-                    combo += 1
-                    print("21 days in a row")
-
-                elif old_data[len(old_data) - 1][0] - old_data[len(old_data) - 28][0] == 27 and combo == 3:
-                    diamond_amount += 2
-                    netherite_ingot_amount += 10
-                    combo += 1
-                    print("28 days in a row")
+                if len(old_data) > 17:
+                    if int(old_data[len(old_data) - 1][0]) - int(old_data[len(old_data) - 14][0]) == 13 and combo == 1:
+                        diamond_amount_count = diamond_amount + 2
+                        netherite_ingot_count = netherite_ingot_amount + 5
+                        combo_count = combo + 1
+                        path_check = 2
+                        print("14 days in a row")
+                if len(old_data) < 24:
+                    if int(old_data[len(old_data) - 1][0]) - int(old_data[len(old_data) - 21][0]) == 20 and combo == 2:
+                        diamond_amount_count = diamond_amount + 2
+                        netherite_ingot_count = netherite_ingot_amount + 8
+                        combo_count = combo + 1
+                        path_check = 3
+                        print("21 days in a row")
+                if len(old_data) > 31:
+                    if int(old_data[len(old_data) - 1][0]) - int(old_data[len(old_data) - 28][0]) == 27 and combo == 3:
+                        diamond_amount_count = diamond_amount + 2
+                        netherite_ingot_count = netherite_ingot_amount + 10
+                        combo_count = combo + 1
+                        path_check = 4
+                        print("28 days in a row")
+                else:
+                    diamond_amount_count = diamond_amount + 2
+                    print("less then 7 day in a row")
             else:
-                diamond_amount += 2
+                diamond_amount_count = diamond_amount + 2
                 print("less then 7 day in a row")
+
+            print("calculate_old_data_1: ", old_data)
+            print("calc_netherite: ", netherite_ingot_count)
+            if netherite_ingot_count > 2 and combo_count > 0:
+                old_data[0][0] = player_name
+                old_data[1][0] = diamond_amount_count
+                old_data[2][0] = netherite_ingot_count
+                old_data[3][0] = combo_count
+            else:
+                old_data[0][0] = player_name
+                old_data[1][0] = diamond_amount_count
+                old_data[2][0] = netherite_ingot_amount
+                old_data[3][0] = combo
+            print("diamond_count: ", diamond_amount_count)
+            print("calculate_old_data_2: ", old_data)
+            with open(f"{self.name}.csv", 'w', newline='') as file:
+                writer = csv.writer(file)
+                temp_list_old_data = []
+                for i in old_data:
+                    temp_list_old_data.append(i)
+                print("temp_list: ", temp_list_old_data)
+                writer.writerows(temp_list_old_data)
+        if path_check == 1:
+            return "你已連續簽到7天!而外獲得3玉髓錠+2鑽石~"
+        elif path_check == 2:
+            return "你已連續簽到14天!而外獲得5玉髓錠+2鑽石~"
+        elif path_check == 3:
+            return "你已連續簽到21天!而外獲得8玉髓錠+2鑽石~"
+        elif path_check == 4:
+            return "你已連續簽到28天!而外獲得10玉髓錠+2鑽石~"
