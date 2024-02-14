@@ -137,7 +137,7 @@ try:
             now_year = time.strftime("%Y")
             print("ctx.author: ", ctx.author)     
             print("now_day: ", now_day)
-            username = csv_data.csv_use(temp_list[0][0], 21, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
+            username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
                 
         if username.read_data() is True:
             await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(ctx.author))
