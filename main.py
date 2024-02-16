@@ -4,20 +4,21 @@ import discord
 from discord.ext import commands
 import os
 import time
-import datetime
 import sys
-import idle
 import csv_data
+import tracemalloc
 #import keep_alive
 
 try:
+    tracemalloc.start()
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('traceback')
     intents=discord.Intents.default()
     intents.members=True
     #intents.typing=True
     intents = discord.Intents.all()
-
     activity=discord.Streaming(name="listening_lofi",url="https://www.youtube.com/watch?v=jfKfPfyJRdk",platform="YouTube")
-    main_bot=commands.Bot(command_prefix="+",intents=intents,activity=activity)
+    main_bot=commands.Bot(command_prefix="/",intents=intents,activity=activity)
 
     @main_bot.event
     async def on_ready():
@@ -32,11 +33,8 @@ try:
     @main_bot.event
     async def on_disconnect():
         print("bot disconnect")
-        i = 0
-        while i < 10:
-            await asyncio.sleep(60)
-            i+=1
-            main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
+        await asyncio.sleep(60)
+        main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
 
     @main_bot.event
     async def on_member_join(member):
@@ -68,25 +66,32 @@ try:
     @commands.command()
     async def sign(ctx):
         try:
-            with open(f"{ctx.author}.csv", mode="r", newline="") as file:
+            author_name_check = str(ctx.author)
+            author_name_check = list(author_name_check)
+            author_name_correct = ctx.author
+            if author_name_check[len(author_name_check) - 2] != "#":
+                author_name_correct = f"{ctx.author}#0"
+
+            with open(f"{author_name_correct}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
                 temp = 0
                 temp_list = []
+                print(author_name_correct)
                 print("temp_on", temp)
                 if temp != 4:  #only get first 4 data(as know as name, diamonds, and netherite_ingot, combo)
                     print("temp_less_then_four", temp)
                     print("reader: ", reader)
                     if not rows or len(rows) < 4:
-                        with open(f"{ctx.author}.csv", mode="w", newline="") as file:
+                        with open(f"{author_name_correct}.csv", mode="w", newline="") as file:
                                 print("test")
                                 writer = csv.writer(file)
-                                writer.writerow([ctx.author])
+                                writer.writerow([author_name_correct])
                                 writer.writerow([0])
                                 writer.writerow([0])
                                 writer.writerow([0])
                                 temp_list = [
-                                    [ctx.author],
+                                    [author_name_correct],
                                     [0],
                                     [0],
                                     [0]
@@ -98,14 +103,14 @@ try:
             now_day = time.strftime("%d")
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
-            print("ctx.author: ", ctx.author)     
-            username = csv_data.csv_use(temp_list[0][0], 20, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
+            print("ctx.author: ", author_name_correct)     
+            username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
         
         except FileNotFoundError:
-            with open(f"{ctx.author}.csv", 'w', newline='') as file:
+            with open(f"{author_name_correct}.csv", 'w', newline='') as file:
                 pass
 
-            with open(f"{ctx.author}.csv", mode="r", newline="") as file:
+            with open(f"{author_name_correct}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
                 temp = 0
@@ -115,15 +120,15 @@ try:
                     print("temp_less_then_four", temp)
                     print("reader: ", reader)
                     if not rows or len(rows) < 4:
-                        with open(f"{ctx.author}.csv", mode="w", newline="") as file:
+                        with open(f"{author_name_correct}.csv", mode="w", newline="") as file:
                                 print("test")
                                 writer = csv.writer(file)
-                                writer.writerow([ctx.author])
+                                writer.writerow([author_name_correct])
                                 writer.writerow([0])
                                 writer.writerow([0])
                                 writer.writerow([0])
                                 temp_list = [
-                                    [ctx.author],
+                                    [author_name_correct],
                                     [0],
                                     [0],
                                     [0]
@@ -135,12 +140,37 @@ try:
             now_day = time.strftime("%d")
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
-            print("ctx.author: ", ctx.author)     
+            print("ctx.author: ", author_name_correct)     
             print("now_day: ", now_day)
             username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0])
-                
+
+
+        #check is user in the list or not
+        with open(f"member_list.csv", mode="r", newline="") as file:
+            reader = csv.reader(file)
+            old_data = []
+            temp_count = 0
+            for row in reader:
+                    old_data.append(row)
+            
+            for i in old_data:    #if user name already exist 
+                print("debug_use: ", i)
+                if author_name_correct == i[0]:
+                    temp_count = 1
+                    print("debug_use_old_data: ", old_data)
+                    print("user name already exsit")
+            
+            if temp_count == 0:    #if not, add into list
+                with open("member_list.csv", 'w', newline='') as file:
+                    writer = csv.writer(file)
+                    author = temp_list[0][0]
+                    old_data.append([author])
+                    print(old_data)
+                    writer.writerows(old_data)
+
+
         if username.read_data() is True:
-            await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(ctx.author))
+            await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(author_name_correct))
             return_something = username.calculate()
             if return_something is not None:
                 await ctx.send(return_something)
@@ -148,6 +178,51 @@ try:
             await ctx.send("你已经成功签到了，等待下一个日出的到来吧")
 
     main_bot.add_command(sign)
+
+
+
+    @commands.command()
+    async def check(ctx, arg):
+        try:
+            with open(f"{arg}#0.csv", mode="r", newline="") as file:
+                    reader = csv.reader(file)
+                    rows = list(reader)
+                    temp_list = rows[:4]
+                    embed = discord.Embed(title = F"**{temp_list[0][0]}**")
+                    embed.add_field(name="钻石数: ", value=F"{temp_list[1][0]}", inline=False)
+                    embed.add_field(name="狱髓锭: ", value=F"{temp_list[2][0]}", inline=False)
+                    await ctx.send(embed=embed)
+        except FileNotFoundError:
+            await ctx.send("请先使用`/sign`创立数据库, 如若已然创立却仍看见此信息则联系`@qqrey`")
+
+
+    main_bot.add_command(check)
+
+
+    @commands.command()
+    async def member_list(ctx):
+        with open(f"member_list.csv", mode="r", newline="") as file:
+            reader = csv.reader(file)
+            old_data = []
+            for row in reader:
+                    old_data.append(row)
+            embed = discord.Embed(title = "member_list")
+            print("old_data", old_data)
+            for i in old_data:
+                embed.add_field(name = "", value= i[0], inline=False)
+            await ctx.send(embed=embed)
+
+    main_bot.add_command(member_list)
+
+    @commands.command()
+    async def on_error(ctx):
+        if len(top_stats) < 1:
+              await ctx.send("there is no error traceback")
+        else:
+             for stat in top_stats[:len(top_stats) - 1]:
+                  await ctx.send(stat)
+
+    main_bot.add_command(on_error)
 
 except Exception as ex:
     sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
@@ -168,7 +243,7 @@ except Exception as ex:
     #try to let the bot reboot if there is any exception error
     activity=discord.Streaming(name="listening_lofi",url="https://www.youtube.com/watch?v=jfKfPfyJRdk",platform="YouTube")
     main_bot=commands.Bot(command_prefix="+",intents=intents,activity=activity)
-    main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
+    main_bot.run("token", reconnect=True)
 
 #keep_alive.keep_alive()
 main_bot.run("token", reconnect=True)

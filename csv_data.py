@@ -193,9 +193,11 @@ class csv_use:
                         print("28 days in a row")
                 else:
                     diamond_amount_count = diamond_amount + 2
+                    combo = 0
                     print("less then 7 day in a row")
             else:
                 diamond_amount_count = diamond_amount + 2
+                combo = 0
                 print("less then 7 day in a row")
 
             print("calculate_old_data_1: ", old_data)
