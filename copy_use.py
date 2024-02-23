@@ -44,8 +44,6 @@ try:
         command = main_bot.get_command('sign')
         author = "anonymous#3265"
         await command(author)
-        schedule_tasks()
-        await run_tasks()
 
     async def run_tasks():
         while True:
@@ -115,7 +113,6 @@ try:
             else:
                 author = ctx.author
 
-            #harmonize user name
             await main_bot.get_channel(command_time_channel).send(f"{str(author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
             author_name_check = str(author)
             author_name_check = list(author_name_check)
@@ -123,7 +120,6 @@ try:
             if author_name_check[len(author_name_check) - 2] != "#":
                 author_name_correct = f"{author}#0"
 
-            #read data
             with open(f"{author_name_correct}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
@@ -160,7 +156,6 @@ try:
             print("ctx.author: ", author_name_correct)     
             username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0], temp_list[4][0])
         
-        #if there is no file, then create a new file
         except FileNotFoundError:
             with open(f"{author_name_correct}.csv", 'w', newline='') as file:
                 pass
@@ -190,8 +185,10 @@ try:
                                     [0],
                                     [0]
                                 ]
-
-            #catch current time and execute csv_data
+                    else:
+                        # Extract data from the first 5 rows
+                        temp_list = rows[:5]
+                        print("temp_list: ", temp_list)  
             now_day = time.strftime("%d")
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
@@ -223,7 +220,7 @@ try:
                     print(old_data)
                     writer.writerows(old_data)
 
-        #send feedback
+
         if username.read_data() is True:
             if author != "anonymous#3265":
                 await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(author_name_correct))
@@ -390,7 +387,6 @@ try:
             current_time_hour_result = current_time_separator_hour.join(current_time_list[11:13])
             current_time_min_result = current_time_separator_min.join(current_time_list[14:16])
             current_time_sec_result = current_time_separator_sec.join(current_time_list[17:19])
-
             for i in bot_start_time:
                  bot_start_time_list.append(i)
             print("bot_start_time_list: ", bot_start_time_list)
@@ -419,12 +415,12 @@ try:
     main_bot.add_command(aca_help)
 
 except Exception as ex:
-    sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
+    sys.path.append("error_handle.txt")
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    with open(r"C:\Users\User\OneDrive\桌面\error_handle.txt",mode="r",encoding="utf-8") as file_r:
+    with open("error_handle.txt",mode="r",encoding="utf-8") as file_r:
         rd=file_r.read()
-    file_w=open(r"C:\Users\User\OneDrive\桌面\error_handle.txt", mode="w")
+    file_w=open("error_handle.txt", mode="w")
     fn=os.path.realpath(__file__)
     zt=time.strftime("%Y")
     zt1=time.strftime("%m")

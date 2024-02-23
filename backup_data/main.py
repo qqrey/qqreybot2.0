@@ -8,7 +8,6 @@ import sys
 import csv_data
 import tracemalloc
 import datetime
-import schedule
 #import keep_alive
 
 try:
@@ -40,26 +39,9 @@ try:
         global elapsed_time_all
         elapsed_time_all =  bot_start_time_all - start_time_all
 
-    async def bot_self_sign():
-        command = main_bot.get_command('sign')
-        author = "anonymous#3265"
-        await command(author)
-        schedule_tasks()
-        await run_tasks()
-
-    async def run_tasks():
-        while True:
-            schedule.run_pending()
-            await asyncio.sleep(1)
-
-    def schedule_tasks():
-        schedule.every().day.at("00:00").do(main_bot.loop.create_task, bot_self_sign())
-
     @main_bot.event
     async def on_ready():
         print("ready")
-        schedule_tasks()
-        await run_tasks()
 
     @main_bot.event
     async def on_connect():
@@ -79,11 +61,9 @@ try:
         guild = main_bot.get_guild(1197122873492508773)
         member_self_intro_channel = 1197184348332499075
         guild_rule = 1197184304690765947
-        guild_bot_command_room = 1197200616880091216
         embed = discord.Embed(title = F"欢迎`{member}`加入靜謐湖畔！〃•̀ꇴ•〃")
         embed.add_field(name="还请记得填写`团员自我介绍`🤩", value=F"<#{member_self_intro_channel}>", inline=False)
         embed.add_field(name="也别忘了遵守团规！★~★", value=F"<#{guild_rule}>", inline=False)
-        embed.add_field(name="也可以到`機器人指令室`簽到(/sign)獲得每日獎勵哦~", value=F"<#{guild_bot_command_room}>", inline=False)
         await channel.send(embed=embed)
         guild=main_bot.get_guild(member.guild.id)
         role = guild.get_role(1197206948978905138)
@@ -100,30 +80,17 @@ try:
         await channel.send(embed=embed)
 
 
+
+
     @commands.command()
     async def sign(ctx):
         try:  #check if user name have #0 or not
-            st=time.strftime("%Y")
-            st1=time.strftime("%m")
-            st2=time.strftime("%d")
-            st3=time.strftime("%H")
-            st4=time.strftime("%M")
-            st5=time.strftime("%S")
-            command_time_channel = 1209207094285176912
-            if ctx == "anonymous#3265":
-                 author = "anonymous#3265"
-            else:
-                author = ctx.author
-
-            #harmonize user name
-            await main_bot.get_channel(command_time_channel).send(f"{str(author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
-            author_name_check = str(author)
+            author_name_check = str(ctx.author)
             author_name_check = list(author_name_check)
-            author_name_correct = author
+            author_name_correct = ctx.author
             if author_name_check[len(author_name_check) - 2] != "#":
-                author_name_correct = f"{author}#0"
+                author_name_correct = f"{ctx.author}#0"
 
-            #read data
             with open(f"{author_name_correct}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
@@ -160,7 +127,6 @@ try:
             print("ctx.author: ", author_name_correct)     
             username = csv_data.csv_use(temp_list[0][0], now_day, now_month, now_year, temp_list[1][0], temp_list[2][0], temp_list[3][0], temp_list[4][0])
         
-        #if there is no file, then create a new file
         except FileNotFoundError:
             with open(f"{author_name_correct}.csv", 'w', newline='') as file:
                 pass
@@ -190,8 +156,10 @@ try:
                                     [0],
                                     [0]
                                 ]
-
-            #catch current time and execute csv_data
+                    else:
+                        # Extract data from the first 5 rows
+                        temp_list = rows[:5]
+                        print("temp_list: ", temp_list)  
             now_day = time.strftime("%d")
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
@@ -223,13 +191,12 @@ try:
                     print(old_data)
                     writer.writerows(old_data)
 
-        #send feedback
+
         if username.read_data() is True:
-            if author != "anonymous#3265":
-                await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(author_name_correct))
-                return_something = username.calculate()
-                if return_something is not None:
-                    await ctx.send(return_something)
+            await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(author_name_correct))
+            return_something = username.calculate()
+            if return_something is not None:
+                await ctx.send(return_something)
         else:
             await ctx.send("你已经成功签到了，等待下一个日出的到来吧")
 
@@ -256,7 +223,7 @@ try:
                     embed.add_field(name="已经连续签到: ", value=F"{temp_list[4][0]}天", inline=False)
                     await ctx.send(embed=embed)
         except FileNotFoundError:
-            await ctx.send("请使用`/aca_help`确认语法正确，\n请先使用`/sign`创立数据库, 如若已然创立却仍看见此信息则联系`@qqrey`")
+            await ctx.send("请先使用`/sign`创立数据库, 如若已然创立却仍看见此信息则联系`@qqrey`")
 
 
     main_bot.add_command(check)
@@ -278,50 +245,12 @@ try:
     main_bot.add_command(member_list)
 
     @commands.command()
-    async def amount_list(ctx):
-        with open(f"member_list.csv", mode="r", newline="") as file:
-            reader = csv.reader(file)
-            read_member_list = []
-            daimond_list = []
-            netherite_ingot_list = []
-            for row in reader:
-                    read_member_list.append(row)
-            print("read_member_list: ", read_member_list)
-
-        for member_name in read_member_list:
-             with open(f"{member_name[0]}.csv", mode="r", newline="") as file:
-                    reader = csv.reader(file)
-                    rows = list(reader)
-                    temp_list = rows[:5]
-                    daimond_list.append(temp_list[1])
-                    netherite_ingot_list.append(temp_list[2])
-
-        arrange_member_list = [temp_member[0] for temp_member in read_member_list]
-        output_member_string = '\n\n'.join(arrange_member_list)
-
-        arrange_daimond_list = [temp_daimond[0] for temp_daimond in daimond_list]
-        output_daimond_string = '\n\n'.join(arrange_daimond_list)
-
-        arrange_netherite_ingot_list = [temp_netherite_ingot[0] for temp_netherite_ingot in netherite_ingot_list]
-        output_netherite_ingot_string = '\n\n'.join(arrange_netherite_ingot_list)
-
-        embed = discord.Embed(title = "**amount list**")
-        embed.add_field(name="用户昵称", value=F"{output_member_string}", inline=True)
-        embed.add_field(name="钻石数", value=F"{output_daimond_string}", inline=True)
-        embed.add_field(name="狱髓数 ", value=F"{output_netherite_ingot_string}", inline=True)
-        await ctx.send(embed=embed)
-
-    main_bot.add_command(amount_list)
-
-    @commands.command()
     async def on_error(ctx):
-        temp = []
         if len(top_stats) < 1:
               await ctx.send("there is no error traceback")
         else:
              for stat in top_stats[:len(top_stats) - 1]:
-                  temp.append(stat)
-                  await ctx.send(temp)
+                  await ctx.send(stat)
 
     main_bot.add_command(on_error)
 
@@ -363,33 +292,33 @@ try:
             run_time_sec_result = separator_sec.join(runtime_list[9:11])
             print("runtime_list: ", runtime_list)
 
-            bot_separator_year = ''
-            bot_separator_month = ''
-            bot_separator_day = ''
-            bot_separator_hour = ''
-            bot_separator_min = ''
-            bot_separator_sec = ''
+            separator_year = ''
+            separator_month = ''
+            separator_day = ''
+            separator_hour = ''
+            separator_min = ''
+            separator_sec = ''
 
-            start_time_year_result = bot_separator_year.join(bot_start_time_list[:4])
-            start_time_month_result = bot_separator_month.join(bot_start_time_list[5:7])
-            start_time_day_result = bot_separator_day.join(bot_start_time_list[8:10])
-            start_time_hour_result = bot_separator_hour.join(bot_start_time_list[11:13])
-            start_time_min_result = bot_separator_min.join(bot_start_time_list[14:16])
-            start_time_sec_result = bot_separator_sec.join(bot_start_time_list[17:19])
+            start_time_year_result = separator_year.join(bot_start_time_list[:4])
+            start_time_month_result = separator_month.join(bot_start_time_list[5:7])
+            start_time_day_result = separator_day.join(bot_start_time_list[8:10])
+            start_time_hour_result = separator_hour.join(bot_start_time_list[11:13])
+            start_time_min_result = separator_min.join(bot_start_time_list[14:16])
+            start_time_sec_result = separator_sec.join(bot_start_time_list[17:19])
 
-            current_time_separator_year = ''
-            current_time_separator_month = ''
-            current_time_separator_day = ''
-            current_time_separator_hour = ''
-            current_time_separator_min = ''
-            current_time_separator_sec = ''
+            separator_year = ''
+            separator_month = ''
+            separator_day = ''
+            separator_hour = ''
+            separator_min = ''
+            separator_sec = ''
 
-            current_time_year_result = current_time_separator_year.join(current_time_list[:4])
-            current_time_month_result = current_time_separator_month.join(current_time_list[5:7])
-            current_time_day_result = current_time_separator_day.join(current_time_list[8:10])
-            current_time_hour_result = current_time_separator_hour.join(current_time_list[11:13])
-            current_time_min_result = current_time_separator_min.join(current_time_list[14:16])
-            current_time_sec_result = current_time_separator_sec.join(current_time_list[17:19])
+            current_time_year_result = separator_year.join(current_time_list[:4])
+            current_time_month_result = separator_month.join(current_time_list[5:7])
+            current_time_day_result = separator_day.join(current_time_list[8:10])
+            current_time_hour_result = separator_hour.join(current_time_list[11:13])
+            current_time_min_result = separator_min.join(current_time_list[14:16])
+            current_time_sec_result = separator_sec.join(current_time_list[17:19])
 
             for i in bot_start_time:
                  bot_start_time_list.append(i)
@@ -405,26 +334,13 @@ try:
 
     main_bot.add_command(run_time)
 
-    @commands.command()
-    async def aca_help(ctx):
-                    embed = discord.Embed(title = "**aca command list**")
-                    embed.add_field(name="/aca_help", value="display aca command list", inline=False)
-                    embed.add_field(name="/sign", value="daily sign in for diamond and netherite ingot reward", inline=False)
-                    embed.add_field(name="/check <nick name> ", value="check for the reward amount and number of consecutive sign in days", inline=False)
-                    embed.add_field(name="/member_list", value="check for the member who already sign in at least once", inline=False)
-                    embed.add_field(name="/amount_list", value="display all reward of all member", inline=False)
-                    embed.add_field(name="/run_time", value="duration of the bot running time", inline=False)
-                    await ctx.send(embed=embed)
-         
-    main_bot.add_command(aca_help)
-
 except Exception as ex:
     sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    with open(r"C:\Users\User\OneDrive\桌面\error_handle.txt",mode="r",encoding="utf-8") as file_r:
+    with open(r"error_handle.txt",mode="r",encoding="utf-8") as file_r:
         rd=file_r.read()
-    file_w=open(r"C:\Users\User\OneDrive\桌面\error_handle.txt", mode="w")
+    file_w=open(r"error_handle.txt", mode="w")
     fn=os.path.realpath(__file__)
     zt=time.strftime("%Y")
     zt1=time.strftime("%m")
@@ -437,7 +353,7 @@ except Exception as ex:
     #try to let the bot reboot if there is any exception error
     activity=discord.Streaming(name="listening_lofi",url="https://www.youtube.com/watch?v=jfKfPfyJRdk",platform="YouTube")
     main_bot=commands.Bot(command_prefix="+",intents=intents,activity=activity)
-    #main_bot.run("token", reconnect=True)
+    main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.Gj8Jh-.s-moXZI4lXR5B-vB9o78gw9MkqIU8hc29vwdy4", reconnect=True)
 
 #keep_alive.keep_alive()
-main_bot.run("token", reconnect=True)
+main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.Gj8Jh-.s-moXZI4lXR5B-vB9o78gw9MkqIU8hc29vwdy4", reconnect=True)
