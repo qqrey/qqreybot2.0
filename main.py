@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import tasks
 import csv
 import discord
 from discord.ext import commands
@@ -9,6 +10,9 @@ import csv_data
 import tracemalloc
 import datetime
 import schedule
+import threading
+import subprocess
+import traceback
 #import keep_alive
 
 try:
@@ -17,10 +21,9 @@ try:
     tracemalloc.start()
     snapshot = tracemalloc.take_snapshot()
     top_stats = snapshot.statistics('traceback')
-    intents=discord.Intents.default()
+    intents = discord.Intents.all()
     intents.members=True
     #intents.typing=True
-    intents = discord.Intents.all()
     activity=discord.Streaming(name="listening_lofi",url="https://www.youtube.com/watch?v=jfKfPfyJRdk",platform="YouTube")
     main_bot=commands.Bot(command_prefix="/",intents=intents,activity=activity)
 
@@ -44,22 +47,10 @@ try:
         command = main_bot.get_command('sign')
         author = "anonymous#3265"
         await command(author)
-        schedule_tasks()
-        await run_tasks()
-
-    async def run_tasks():
-        while True:
-            schedule.run_pending()
-            await asyncio.sleep(1)
-
-    def schedule_tasks():
-        schedule.every().day.at("00:00").do(main_bot.loop.create_task, bot_self_sign())
 
     @main_bot.event
     async def on_ready():
         print("ready")
-        schedule_tasks()
-        await run_tasks()
 
     @main_bot.event
     async def on_connect():
@@ -80,12 +71,12 @@ try:
         member_self_intro_channel = 1197184348332499075
         guild_rule = 1197184304690765947
         guild_bot_command_room = 1197200616880091216
-        embed = discord.Embed(title = F"欢迎`{member}`加入靜謐湖畔！〃•̀ꇴ•〃")
+        embed = discord.Embed(title = F"欢迎`{member.global_name}`加入靜謐湖畔！〃•̀ꇴ•〃")
         embed.add_field(name="还请记得填写`团员自我介绍`🤩", value=F"<#{member_self_intro_channel}>", inline=False)
         embed.add_field(name="也别忘了遵守团规！★~★", value=F"<#{guild_rule}>", inline=False)
         embed.add_field(name="也可以到`機器人指令室`簽到(/sign)獲得每日獎勵哦~", value=F"<#{guild_bot_command_room}>", inline=False)
         await channel.send(embed=embed)
-        guild=main_bot.get_guild(member.guild.id)
+        guild = main_bot.get_guild(member.guild.id)
         role = guild.get_role(1197206948978905138)
         await member.add_roles(role)
 
@@ -94,14 +85,14 @@ try:
         member_join_time = member.joined_at.strftime('%Y, %m, %d')
         member_leave_time = time.strftime('%Y, %m, %d')
         channel = main_bot.get_channel(1197122873492508776)
-        embed = discord.Embed(title = F"`{member}`离开了靜謐湖畔")
+        embed = discord.Embed(title = F"`{member.global_name}`离开了靜謐湖畔")
         embed.add_field(name="加入时间", value=F"{member_join_time}", inline=False)
         embed.add_field(name="离开时间", value=F"{member_leave_time}", inline=False)
         await channel.send(embed=embed)
 
 
     @commands.command()
-    async def sign(ctx):
+    async def sign(ctx, input_name = None, input_date = None):
         try:  #check if user name have #0 or not
             st=time.strftime("%Y")
             st1=time.strftime("%m")
@@ -114,7 +105,27 @@ try:
                  author = "anonymous#3265"
             else:
                 author = ctx.author
-
+            
+            #print(ctx.author, input_name[0], input_date)
+            if str(author) in ["qqrey", "qqrey#0", "anonymous#3265"] and input_name is not None:
+                try:
+                    for i in ctx.guild.members:
+                        if i.name[len(i.name) - 2] != "#":
+                            correct_name = f"{i.name}#0"
+                        #print("i:", correct_name)
+                        #print("global: ", i.global_name)
+                        #print("input_name: ", input_name[0])
+                        if i.global_name == input_name[0]:
+                            author = i.name
+                            break
+                        elif correct_name == input_name[0]:
+                            author = i.name
+                            break
+                        else:
+                             pass
+                except:
+                     await ctx.send("typo error?")
+                
             #harmonize user name
             await main_bot.get_channel(command_time_channel).send(f"{str(author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
             author_name_check = str(author)
@@ -151,10 +162,17 @@ try:
                                     [0]
                                 ]
                     else:
-                        # Extract data from the first 4 rows
+                        # Extract data from the first 5 rows
                         temp_list = rows[:5]
-                        print("temp_list: ", temp_list)  
-            now_day = time.strftime("%d")
+                        print("temp_list: ", temp_list) 
+
+            if author in ["qqrey", "qqrey#0"] and input_date is not None:
+                now_day = input_date
+            else:
+                now_day = time.strftime("%d")
+
+            if input_date is not None:
+                now_day = input_date
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
             print("ctx.author: ", author_name_correct)     
@@ -226,7 +244,7 @@ try:
         #send feedback
         if username.read_data() is True:
             if author != "anonymous#3265":
-                await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(author_name_correct))
+                await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(ctx.author.global_name))
                 return_something = username.calculate()
                 if return_something is not None:
                     await ctx.send(return_something)
@@ -236,11 +254,36 @@ try:
     main_bot.add_command(sign)
 
 
+    @commands.command()
+    async def aca_sign(ctx, arg):
+        if str(ctx.author) in ["qqrey", "qqrey#0", "anonymous#3265"]:
+            if arg == "11436":
+                with open(f"member_list.csv", mode="r", newline="") as file:
+                  reader = csv.reader(file)
+                  for row in reader:
+                      command = main_bot.get_command('sign')
+                      await command(ctx, row, "01")
+                      await ctx.send("row: {}".format(row[0]))
+            else:
+                 await ctx.send("{} is a wrong password".format(arg))
+        else:
+             await ctx.send("{}, your're not admin.".format(ctx.author))
+    
+    main_bot.add_command(aca_sign)
+                
+
 
     @commands.command()
     async def check(ctx, arg):
         try:
-            author_name_check = str(arg)
+            print("a: ", ctx.guild.members)
+            for i in ctx.guild.members:
+                 if i.global_name == arg:
+                      arg = i.name
+                      print("i.id: ", arg)
+                      break
+                 else:
+                    author_name_check = str(arg)
             author_name_check = list(author_name_check)
             author_name_correct = arg
             if author_name_check[len(author_name_check) - 2] != "#":
@@ -312,6 +355,88 @@ try:
         await ctx.send(embed=embed)
 
     main_bot.add_command(amount_list)
+
+    @commands.command()
+    async def combo_list(ctx):
+        with open(f"member_list.csv", mode="r", newline="") as file:
+            reader = csv.reader(file)
+            read_member_list = []
+            combo_list = []
+            for row in reader:
+                    read_member_list.append(row)
+            print("read_member_list: ", read_member_list)
+
+        for member_name in read_member_list:
+             with open(f"{member_name[0]}.csv", mode="r", newline="") as file:
+                    reader = csv.reader(file)
+                    rows = list(reader)
+                    temp_list = rows[:5]
+                    combo_list.append(temp_list[4])
+
+        arrange_member_list = [temp_member[0] for temp_member in read_member_list]
+        output_member_string = '\n\n'.join(arrange_member_list)
+
+        arrange_combo_list = [temp_combo[0] for temp_combo in combo_list]
+        output_combo_string = '\n\n'.join(arrange_combo_list)
+
+        embed = discord.Embed(title = "**combo list**")
+        embed.add_field(name="用户昵称", value=F"{output_member_string}", inline=True)
+        embed.add_field(name="连续签到 ", value=F"{output_combo_string}", inline=True)
+        await ctx.send(embed=embed)
+
+    main_bot.add_command(combo_list)
+
+    @commands.command()
+    async def test(ctx):
+        async def read_input():
+            await ctx.send("try somethings")
+        # Open a file in append mode to save the output
+        with open("cmd_output.log", "a") as file:
+            ctx = None
+            # Start a thread to read input from the user
+            input_thread = threading.Thread(target=read_input)
+            input_thread.start()
+
+            # Wait for user input or timeout after 10 seconds
+            input_thread.join(timeout=10)
+
+            # Check if the input thread is still alive (indicating timeout)
+            if input_thread.is_alive():
+                # If timeout occurs, set a to empty string to exit the loop
+                ctx = ""
+
+            # Start the cmd process with stdout redirected to a pipe
+            cmd_process = subprocess.Popen("cmd", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True)
+            # Close the input stream to signal to the cmd process that it should exit once it's done producing output
+            cmd_process.stdin.close()
+            # Continuously read the output from the cmd process
+            print("test0")
+            counter = 0
+            while True:
+                # Read a line of output from the cmd process
+                line = cmd_process.stdout.readline()
+                print("test1")
+                if not line:
+                    break  # Exit the loop if there's no more output
+                
+                # Write the output to the file
+                if counter == 0:
+                    counter += 1
+                    file.write("\n---------------------------------------------------\n")
+                print("test2")
+                print("line: ", line)
+                file.write(line)
+                file.flush()  # Ensure data is written to file immediately
+            # Wait for the cmd process to finish
+                print("test3")
+            cmd_process.wait()
+        # Wait for the input thread to finish
+        print("test4")
+        input_thread.join()
+
+        print("Command prompt output saved to 'cmd_output.log'")
+
+    main_bot.add_command(test)
 
     @commands.command()
     async def on_error(ctx):
@@ -418,6 +543,45 @@ try:
          
     main_bot.add_command(aca_help)
 
+    @main_bot.event
+    async def on_command_error(ctx, error):
+        error = getattr(error, "original", error)
+
+        if isinstance(error, (commands.NoPrivateMessage)):
+            await ctx.send("I couldn't send this information to you via direct message. Are your DMs enabled?")
+        elif isinstance(error, (discord.Forbidden)):
+            await ctx.send("Discord is forbidding me from sending the message you've requested. Sorry!")
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"You missed the argument `{error.param.name}` for this command!")
+        elif isinstance(error, commands.UserInputError):
+            await ctx.send(f"I can't understand this command message! Please check `/aca_help {ctx.command}`")
+        elif isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
+            return
+        else:
+            error_traceback = traceback.format_exception(type(error), error, error.__traceback__)
+
+            await asyncio.gather(
+                send_error_message(ctx, error, error_traceback),
+                ctx.send("The command you've entered could not be completed at this time.")
+            )
+
+    async def send_error_message(ctx, error, tb):
+        global zt,zt1,zt2,zt3,zt4,zt5
+        zt=time.strftime("%Y")
+        zt1=time.strftime("%m")
+        zt2=time.strftime("%d")
+        zt3=time.strftime("%H")
+        zt4=time.strftime("%M")
+        zt5=time.strftime("%S")
+
+        # Cleandoc was being really annoying for this, would be multiline str but was having issues.
+        error_message =  f"`{ctx.author}` running `{ctx.command}` caused `{error.__class__.__name__}`\n"
+        error_message += f"Message Link: {ctx.message.jump_url}\n"
+        error_message += f"```{''.join(tb)}```"
+        error_message += time.strftime("{},{},{},{}:{}:{}".format(zt,zt1,zt2,zt3,zt4,zt5))
+
+        await main_bot.get_channel(1206620446309748886).send(error_message)#静谧湖畔
+
 except Exception as ex:
     sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -434,10 +598,6 @@ except Exception as ex:
     zt5=time.strftime("%S")
     file_w.write("{}\n\n{}y{}M{}d,{}h{}m{}s\nerror_msg:{}\nerror_type:{}\nerror_line:{}\ndoc_name:{}\npath:{}".format(rd,zt,zt1,zt2,zt3,zt4,zt5,ex,exc_type, exc_tb.tb_lineno,fname,fn))
     file_w.close()
-    #try to let the bot reboot if there is any exception error
-    activity=discord.Streaming(name="listening_lofi",url="https://www.youtube.com/watch?v=jfKfPfyJRdk",platform="YouTube")
-    main_bot=commands.Bot(command_prefix="+",intents=intents,activity=activity)
-    #main_bot.run("token", reconnect=True)
 
 #keep_alive.keep_alive()
-main_bot.run("token", reconnect=True)
+main_bot.run("Token", reconnect=True)
