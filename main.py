@@ -61,8 +61,6 @@ try:
     @main_bot.event
     async def on_disconnect():
         print("bot disconnect")
-        await asyncio.sleep(60)
-        main_bot.run("MTIwNjQ0NTc0MzQ4NTg4NjU2Ng.GwR5CV.f5GKJT12sgNruT1lm2iYoD18HlXA9EZtZN5pHc", reconnect=True)
 
     @main_bot.event
     async def on_member_join(member):
@@ -76,6 +74,7 @@ try:
         embed.add_field(name="也别忘了遵守团规！★~★", value=F"<#{guild_rule}>", inline=False)
         embed.add_field(name="也可以到`機器人指令室`簽到(/sign)獲得每日獎勵哦~", value=F"<#{guild_bot_command_room}>", inline=False)
         await channel.send(embed=embed)
+
         guild = main_bot.get_guild(member.guild.id)
         role = guild.get_role(1197206948978905138)
         await member.add_roles(role)
@@ -106,6 +105,7 @@ try:
             else:
                 author = ctx.author
             
+            user_global_name = ctx.author.global_name
             #print(ctx.author, input_name[0], input_date)
             if str(author) in ["qqrey", "qqrey#0", "anonymous#3265"] and input_name is not None:
                 try:
@@ -117,9 +117,11 @@ try:
                         #print("input_name: ", input_name[0])
                         if i.global_name == input_name[0]:
                             author = i.name
+                            user_global_name = i.global_name
                             break
                         elif correct_name == input_name[0]:
                             author = i.name
+                            user_global_name = i.global_name
                             break
                         else:
                              pass
@@ -171,8 +173,6 @@ try:
             else:
                 now_day = time.strftime("%d")
 
-            if input_date is not None:
-                now_day = input_date
             now_month = time.strftime("%m")
             now_year = time.strftime("%Y")
             print("ctx.author: ", author_name_correct)     
@@ -182,7 +182,8 @@ try:
         except FileNotFoundError:
             with open(f"{author_name_correct}.csv", 'w', newline='') as file:
                 pass
-
+            
+            #if there is no file, then create a new file; here is for create new file
             with open(f"{author_name_correct}.csv", mode="r", newline="") as file:
                 reader = csv.reader(file)
                 rows = list(reader)
@@ -244,7 +245,7 @@ try:
         #send feedback
         if username.read_data() is True:
             if author != "anonymous#3265":
-                await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(ctx.author.global_name))
+                await ctx.send("`{}`你已簽到成功! 獲得2鑽石~".format(user_global_name))
                 return_something = username.calculate()
                 if return_something is not None:
                     await ctx.send(return_something)
@@ -281,6 +282,7 @@ try:
                  if i.global_name == arg:
                       arg = i.name
                       print("i.id: ", arg)
+                      author_name_check = str(arg)
                       break
                  else:
                     author_name_check = str(arg)
@@ -385,6 +387,104 @@ try:
         await ctx.send(embed=embed)
 
     main_bot.add_command(combo_list)
+
+    @commands.command()
+    async def members_data(ctx, year = None, month = None):
+        user_name = []
+        diamont_amount = []
+        netherite_amount = []
+        old_user_name = []
+        old_diamont_amount = []
+        old_netherite_amount = []
+        vertical_user_name = []
+        vertical_diamont_amount = []
+        vertical_netherite_amount = []
+        try:
+            if year != None:
+                now_year = year
+            else:
+                 now_year = None
+            
+            if month != None:
+                now_month = month
+            else:
+                now_month = None
+                  
+            with open(f"member_list.csv", mode="r", newline="") as file:
+                        reader = csv.reader(file)
+                        for row in reader:
+                            if now_year and now_month is not None:
+                                print(f"{row[0]}_{now_year}_{now_month}.csv")
+                                try:
+                                    with open(f"{row[0]}_{now_year}_{now_month}.csv", mode="r", newline="") as file:
+                                            reader_list = []
+                                            reader = csv.reader(file)
+                                            for row in reader:
+                                                reader_list.append(row)
+                                            reader_list = reader_list[:5]
+
+                                            user_name.append(f"{reader_list[0][0]}")
+                                            diamont_amount.append(f"{reader_list[1][0]}")
+                                            netherite_amount.append(f"{reader_list[2][0]}")
+                                            print("user_name: ", user_name)
+                                            print("diamont_amount: ", diamont_amount)
+                                            print("netherite_amount: ", netherite_amount)
+
+                                    if int(now_month) - 1 > 0:
+                                        old_month = int(now_month) - 1
+                                        if int(now_month) - 1 == 0:
+                                            old_month = 12
+                                            old_year = int(now_year) - 1
+                                        else:
+                                             old_year = now_year
+                                except FileNotFoundError:
+                                    pass
+
+                                try:
+                                    with open(f"{row[0]}_{old_year}_{old_month}.csv", mode="r", newline="") as file:
+                                        reader_list = []
+                                        reader = csv.reader(file)
+                                        for row in reader:
+                                            reader_list.append(row)
+                                        reader_list = reader_list[:5]
+
+                                        old_user_name.append(f"{reader_list[0][0]}")
+                                        old_diamont_amount.append(f"{reader_list[1][0]}")
+                                        old_netherite_amount.append(f"{reader_list[2][0]}")
+
+                                        for i in range(len(old_user_name)):
+                                            final_diamont_data = int(diamont_amount[i]) - int(old_diamont_amount[i])
+                                            final_netherite_data = int(netherite_amount[i]) - int(old_netherite_amount[i])
+                                            diamont_amount = final_diamont_data
+                                            netherite_amount = final_netherite_data
+
+                                except FileNotFoundError:
+                                    pass
+                            else:
+                                 with open(f"{row[0]}.csv", mode="r", newline="") as file:              
+                                        reader_list = []
+                                        reader = csv.reader(file)
+                                        for row in reader:
+                                            reader_list.append(row)
+                                        reader_list = reader_list[:5]
+                                        user_name.append(f"{reader_list[0][0]}")
+                                        diamont_amount.append(f"{reader_list[1][0]}")
+                                        netherite_amount.append(f"{reader_list[2][0]}")
+
+        except FileNotFoundError:
+               pass
+            
+        vertical_user_name ='\n'.join(user_name)
+        vertical_diamont_amount = '\n'.join(diamont_amount)
+        vertical_netherite_amount = '\n'.join(netherite_amount)
+        embed = discord.Embed(title = "**members data**")
+        embed.add_field(name="用户昵称", value=f"{vertical_user_name}", inline=True)
+        embed.add_field(name="钻石数", value=f"{vertical_diamont_amount}", inline=True)
+        embed.add_field(name="狱髓数 ", value=f"{vertical_netherite_amount}", inline=True)
+        await ctx.send(embed=embed)
+
+    main_bot.add_command(members_data)
+    
 
     @commands.command()
     async def test(ctx):
@@ -539,6 +639,7 @@ try:
                     embed.add_field(name="/member_list", value="check for the member who already sign in at least once", inline=False)
                     embed.add_field(name="/amount_list", value="display all reward of all member", inline=False)
                     embed.add_field(name="/run_time", value="duration of the bot running time", inline=False)
+                    embed.add_field(name="members_data", value="display all member data", inline=False)
                     await ctx.send(embed=embed)
          
     main_bot.add_command(aca_help)
