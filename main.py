@@ -93,6 +93,7 @@ try:
     @commands.command()
     async def sign(ctx, input_name = None, input_date = None):
         try:  #check if user name have #0 or not
+            admin = None
             st=time.strftime("%Y")
             st1=time.strftime("%m")
             st2=time.strftime("%d")
@@ -107,29 +108,47 @@ try:
             
             user_global_name = ctx.author.global_name
             #print(ctx.author, input_name[0], input_date)
-            if str(author) in ["qqrey", "qqrey#0", "anonymous#3265"] and input_name is not None:
+            if str(author) in ["qqrey", "qqrey#0", "luu_0211", "mobing_14", "anonymous#3265"] and input_name is not None:
                 try:
                     for i in ctx.guild.members:
                         if i.name[len(i.name) - 2] != "#":
                             correct_name = f"{i.name}#0"
-                        #print("i:", correct_name)
-                        #print("global: ", i.global_name)
-                        #print("input_name: ", input_name[0])
+                        print("i:", correct_name)
+                        print("global: ", i.global_name)
+                        print("input_name: ", input_name)
                         if i.global_name == input_name[0]:
+                            admin = author
                             author = i.name
                             user_global_name = i.global_name
+                            print("1author: ", author)
                             break
+
                         elif correct_name == input_name[0]:
+                            admin = author
                             author = i.name
                             user_global_name = i.global_name
+                            print("2author: ", author)
                             break
+
+                        elif i.global_name == input_name:
+                             admin = author
+                             author = i.name
+                             user_global_name = i.global_name
+                             break
+                        
+                        elif correct_name == input_name:
+                             admin = author
+                             author = i.name
+                             user_global_name = i.global_name
+                             break
+                        
                         else:
                              pass
                 except:
                      await ctx.send("typo error?")
                 
             #harmonize user name
-            await main_bot.get_channel(command_time_channel).send(f"{str(author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
+            await main_bot.get_channel(command_time_channel).send(f"{admin}: {str(author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
             author_name_check = str(author)
             author_name_check = list(author_name_check)
             author_name_correct = author
@@ -168,9 +187,11 @@ try:
                         temp_list = rows[:5]
                         print("temp_list: ", temp_list) 
 
-            if author in ["qqrey", "qqrey#0"] and input_date is not None:
+            if str(admin) in ['qqrey', "qqrey#0"] and input_date is not None:
+                print("author_true")
                 now_day = input_date
             else:
+                print("author_false")
                 now_day = time.strftime("%d")
 
             now_month = time.strftime("%m")
@@ -257,8 +278,18 @@ try:
 
     @commands.command()
     async def aca_sign(ctx, arg):
+        command_time_channel = 1209207094285176912
+        admin = None
+        st=time.strftime("%Y")
+        st1=time.strftime("%m")
+        st2=time.strftime("%d")
+        st3=time.strftime("%H")
+        st4=time.strftime("%M")
+        st5=time.strftime("%S")
+        await main_bot.get_channel(command_time_channel).send(f"{admin}: {str(ctx.author)}在{st}年{st1}月{st2}日，{st3}:{st4}:{st5}时签到了")
         if str(ctx.author) in ["qqrey", "qqrey#0", "anonymous#3265"]:
             if arg == "11436":
+                await ctx.delete()
                 with open(f"member_list.csv", mode="r", newline="") as file:
                   reader = csv.reader(file)
                   for row in reader:
@@ -268,7 +299,7 @@ try:
             else:
                  await ctx.send("{} is a wrong password".format(arg))
         else:
-             await ctx.send("{}, your're not admin.".format(ctx.author))
+             await ctx.send("{}, your're not an admin.".format(ctx.author))
     
     main_bot.add_command(aca_sign)
                 
@@ -391,15 +422,18 @@ try:
     @commands.command()
     async def members_data(ctx, year = None, month = None):
         user_name = []
-        diamont_amount = []
+        diamond_amount = []
         netherite_amount = []
         old_user_name = []
-        old_diamont_amount = []
+        old_diamond_amount = []
         old_netherite_amount = []
+        final_diamond_amount = []
+        final_netherite_amount = []
         vertical_user_name = []
-        vertical_diamont_amount = []
+        vertical_diamond_amount = []
         vertical_netherite_amount = []
-        try:
+        path = 0
+        try:   #first try statement: entry
             if year != None:
                 now_year = year
             else:
@@ -409,39 +443,70 @@ try:
                 now_month = month
             else:
                 now_month = None
-                  
+
+            print("now_year: ", now_year)
+            print("now_month: ", now_month)
+
+            if now_year == "2024" and now_month in ["02", "2"]:  #for the first record that cannot be calculate by deduct it self with the previous month(404)
+                with open(f"member_list.csv", mode="r", newline="") as file:
+                    reader = csv.reader(file)
+                    path = 1  #no need to calculate
+                    for row in reader:
+                        try:  #second try statement: entry
+                            with open(f"{row[0]}_{now_year}_{now_month}.csv", mode="r", newline="") as file:
+                                reader_list = []
+                                reader = csv.reader(file)
+                                for row in reader:
+                                    reader_list.append(row)
+                                reader_list = reader_list[:5]
+                                user_name.append(f"{reader_list[0][0]}")
+                                diamond_amount.append(f"{reader_list[1][0]}")
+                                netherite_amount.append(f"{reader_list[2][0]}")
+                                print("user_name: ", user_name)
+                
+                            break  #avoid multi print(don't know why, but ya)
+
+                        except FileNotFoundError:  #second try statement: exit
+                            pass
+                 
             with open(f"member_list.csv", mode="r", newline="") as file:
                         reader = csv.reader(file)
                         for row in reader:
+                            print("row: ", row)
                             if now_year and now_month is not None:
                                 print(f"{row[0]}_{now_year}_{now_month}.csv")
-                                try:
+                                try:  #third try statement: entry
                                     with open(f"{row[0]}_{now_year}_{now_month}.csv", mode="r", newline="") as file:
                                             reader_list = []
                                             reader = csv.reader(file)
-                                            for row in reader:
-                                                reader_list.append(row)
+                                            for reader_row in reader:
+                                                reader_list.append(reader_row)
+                                                if len(reader_list) == 5:
+                                                    break
                                             reader_list = reader_list[:5]
-
+                                            print("reader_list: ", reader_list)
                                             user_name.append(f"{reader_list[0][0]}")
-                                            diamont_amount.append(f"{reader_list[1][0]}")
+                                            diamond_amount.append(f"{reader_list[1][0]}")
                                             netherite_amount.append(f"{reader_list[2][0]}")
-                                            print("user_name: ", user_name)
-                                            print("diamont_amount: ", diamont_amount)
-                                            print("netherite_amount: ", netherite_amount)
+                                            print(f"{user_name[len(user_name) - 1]}: {diamond_amount[len(diamond_amount) - 1]}, {netherite_amount[len(netherite_amount) - 1]}")
 
+                                    #print("now_month", now_month)
+                                    print("1")
                                     if int(now_month) - 1 > 0:
+                                        print("2")
                                         old_month = int(now_month) - 1
+                                        old_year = int(now_year)
                                         if int(now_month) - 1 == 0:
                                             old_month = 12
                                             old_year = int(now_year) - 1
-                                        else:
-                                             old_year = now_year
-                                except FileNotFoundError:
-                                    pass
 
-                                try:
+                                    if len(str(old_month)) == 1:
+                                        old_month = f"0{old_month}"
+
+                                    print(f"{row[0]}_{old_year}_{old_month}.csv")
+                                    
                                     with open(f"{row[0]}_{old_year}_{old_month}.csv", mode="r", newline="") as file:
+                                        print("3")
                                         reader_list = []
                                         reader = csv.reader(file)
                                         for row in reader:
@@ -449,38 +514,61 @@ try:
                                         reader_list = reader_list[:5]
 
                                         old_user_name.append(f"{reader_list[0][0]}")
-                                        old_diamont_amount.append(f"{reader_list[1][0]}")
+                                        old_diamond_amount.append(f"{reader_list[1][0]}")
                                         old_netherite_amount.append(f"{reader_list[2][0]}")
+                                        print(f"{user_name[len(user_name) - 1]}: {diamond_amount[len(diamond_amount) - 1]}, {netherite_amount[len(netherite_amount) - 1]}")
 
-                                        for i in range(len(old_user_name)):
-                                            final_diamont_data = int(diamont_amount[i]) - int(old_diamont_amount[i])
-                                            final_netherite_data = int(netherite_amount[i]) - int(old_netherite_amount[i])
-                                            diamont_amount = final_diamont_data
-                                            netherite_amount = final_netherite_data
-
-                                except FileNotFoundError:
+                                except FileNotFoundError:  #third try statement: exit
                                     pass
+
                             else:
-                                 with open(f"{row[0]}.csv", mode="r", newline="") as file:              
+                                path = 1  #no need calculate
+                                print("path1_row0: ", row[0])
+                                with open(f"{row[0]}.csv", mode="r", newline="") as file:              
                                         reader_list = []
                                         reader = csv.reader(file)
                                         for row in reader:
                                             reader_list.append(row)
                                         reader_list = reader_list[:5]
+                                        print("reader_list: ", reader_list)
+                                        print("reader_list[0][0]: ", reader_list[0][0])
+                                        print("reader_list[1][0]: ", reader_list[1][0])
+                                        print("reader_list[2][0]: ", reader_list[2][0])
                                         user_name.append(f"{reader_list[0][0]}")
-                                        diamont_amount.append(f"{reader_list[1][0]}")
+                                        diamond_amount.append(f"{reader_list[1][0]}")
                                         netherite_amount.append(f"{reader_list[2][0]}")
 
-        except FileNotFoundError:
+                        for i in range(len(old_user_name)):
+                            path = 0
+                            final_diamond_amount.append(str(int(diamond_amount[i]) - int(old_diamond_amount[i])))
+                            final_netherite_amount.append(str(int(netherite_amount[i]) - int(old_netherite_amount[i])))
+                            print("------------------------------------------------------------")
+                            print("user_name: ", old_user_name[i])
+                            print("diamond_amount: ", diamond_amount[i])
+                            print("old_diamond_amount: ", old_diamond_amount[i])
+                            print("netherite_amount: ", netherite_amount[i])
+                            print("old_netherite_amount: ", old_netherite_amount[i])
+                            print(str(int(diamond_amount[i]) - int(old_diamond_amount[i])))
+
+                                
+
+        except FileNotFoundError:  #first try statement: exit
                pass
-            
-        vertical_user_name ='\n'.join(user_name)
-        vertical_diamont_amount = '\n'.join(diamont_amount)
-        vertical_netherite_amount = '\n'.join(netherite_amount)
-        embed = discord.Embed(title = "**members data**")
+
+        if path == 0:  #path 0 mean it need to be calculate
+            vertical_user_name ='\n'.join(old_user_name)
+            vertical_diamond_amount = '\n'.join(final_diamond_amount)
+            vertical_netherite_amount = '\n'.join(final_netherite_amount)
+        
+        if path == 1:  #path 1 mean it no need to be calculate
+            vertical_user_name ='\n'.join(user_name)
+            vertical_diamond_amount = '\n'.join(diamond_amount)
+            vertical_netherite_amount = '\n'.join(netherite_amount)
+
+        embed = discord.Embed(title = f"**members data**  path={path}")
         embed.add_field(name="用户昵称", value=f"{vertical_user_name}", inline=True)
-        embed.add_field(name="钻石数", value=f"{vertical_diamont_amount}", inline=True)
-        embed.add_field(name="狱髓数 ", value=f"{vertical_netherite_amount}", inline=True)
+        embed.add_field(name="钻石数", value=f"{vertical_diamond_amount}", inline=True)
+        embed.add_field(name="狱髓数 ", value=f"{vertical_netherite_amount}", inline=True)        
         await ctx.send(embed=embed)
 
     main_bot.add_command(members_data)
@@ -631,6 +719,34 @@ try:
     main_bot.add_command(run_time)
 
     @commands.command()
+    async def member_days(ctx, arg):
+        if str(ctx.author) not in ["qqrey", "qqrey#0", "luu_0211", "mobing_14", "anonymous#3265"]:
+            await ctx.send(f"`{ctx.author}`, you are not an admin")
+            return
+        
+        for i in ctx.guild.members:
+            if i.global_name == arg:
+                arg = i.name
+                global_arg = i.global_name
+                break
+            else:
+                arg = str(arg)
+                global_arg = str(arg)
+
+        member_data = csv_data.csv_use.member_days_display(arg)
+
+        print(member_data)
+
+        embed = discord.Embed(title = f"**{global_arg}**")
+        embed.add_field(name="签到等阶", value = member_data[3][0], inline=True)
+        embed.add_field(name="签到天数", value = member_data[4][0], inline=True)
+        embed.add_field(name="签到日期", value = member_data[5:], inline=False)
+
+        await ctx.send(embed = embed)
+
+    main_bot.add_command(member_days)
+
+    @commands.command()
     async def aca_help(ctx):
                     embed = discord.Embed(title = "**aca command list**")
                     embed.add_field(name="/aca_help", value="display aca command list", inline=False)
@@ -684,12 +800,12 @@ try:
         await main_bot.get_channel(1206620446309748886).send(error_message)#静谧湖畔
 
 except Exception as ex:
-    sys.path.append(r"C:\Users\User\OneDrive\桌面\error_handle.txt")
+    sys.path.append("error_handle.txt")
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    with open(r"C:\Users\User\OneDrive\桌面\error_handle.txt",mode="r",encoding="utf-8") as file_r:
+    with open("error_handle.txt",mode="r",encoding="utf-8") as file_r:
         rd=file_r.read()
-    file_w=open(r"C:\Users\User\OneDrive\桌面\error_handle.txt", mode="w")
+    file_w=open("error_handle.txt", mode="w")
     fn=os.path.realpath(__file__)
     zt=time.strftime("%Y")
     zt1=time.strftime("%m")
